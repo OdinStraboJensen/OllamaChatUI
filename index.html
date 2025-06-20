@@ -116,42 +116,66 @@
     }
 
     async function sendPrompt() {
-      const model = document.getElementById('model').value.trim();
-      const prompt = document.getElementById('prompt').value.trim();
-      const thinking = document.getElementById('thinking');
+  const model = document.getElementById('model').value.trim();
+  const prompt = document.getElementById('prompt').value.trim();
+  const thinking = document.getElementById('thinking');
 
-      if (!prompt || !model) return;
+  if (!prompt || !model) return;
 
-      conversation.push({ role: 'user', content: prompt });
-      renderChat();
-      document.getElementById('prompt').value = '';
-      thinking.style.display = 'block';
+  conversation.push({ role: 'user', content: prompt });
+  renderChat();
+  document.getElementById('prompt').value = '';
+  thinking.style.display = 'block';
 
-      try {
-        const res = await fetch('http://localhost:11434/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model,
-            messages: conversation,
-            stream: false
-          })
-        });
+  // Add a placeholder message for the assistant
+  let assistantMsg = { role: 'assistant', content: '' };
+  conversation.push(assistantMsg);
+  renderChat();
 
-        if (!res.ok) {
-          const errorText = await res.text();
-          conversation.push({ role: 'assistant', content: `Error: ${res.status} - ${errorText}` });
-        } else {
-          const data = await res.json();
-          conversation.push({ role: 'assistant', content: data.message.content });
+  try {
+    const res = await fetch('http://localhost:11434/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: conversation.slice(0, -1), // omit the assistant placeholder
+        stream: true
+      })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process multiple JSON lines if present
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // last line might be incomplete
+
+      for (let line of lines) {
+        if (!line.trim()) continue;
+        const json = JSON.parse(line);
+        if (json.done) continue;
+        if (json.message?.content) {
+          assistantMsg.content += json.message.content;
+          renderChat();
         }
-      } catch (err) {
-        conversation.push({ role: 'assistant', content: `Error: ${err.message}` });
       }
-
-      thinking.style.display = 'none';
-      renderChat();
     }
+
+  } catch (err) {
+    assistantMsg.content = `Error: ${err.message}`;
+  }
+
+  thinking.style.display = 'none';
+  renderChat();
+}
+
   </script>
 </body>
 </html>
