@@ -23,11 +23,16 @@ Open **PowerShell** or **Command Prompt** and run:
 
 ```bash
 ollama --version
+```
 
-You should see something like "ollama version 0.x.x"
+You should see something like 
+```bash
+ollama version 0.x.x"
+```
 
 ## Download and run llama3.1
 
 ```bash
 ollama pull llama3
 ollama run llama3
+```
