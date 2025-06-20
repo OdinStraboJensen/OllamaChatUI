@@ -35,7 +35,7 @@
          .assistant strong {
          color: #0b8043;
          }
-         textarea, input {
+         textarea, select {
          width: 100%;
          font-size: 1em;
          padding: 10px;
@@ -58,7 +58,7 @@
          }
          .download-btn {
          position: absolute;
-         top: -2.2em; /* Moved higher */
+         top: -2.2em;
          right: 0;
          font-size: 0.85em;
          background: #ddd;
@@ -79,7 +79,7 @@
    <body>
       <h1>Ollama Chat</h1>
       <label for="model">Model name:</label>
-      <input type="text" id="model" value="llama3.1" placeholder="e.g., llama3.1, mistral:instruct" />
+      <select id="model"></select>
       <div class="chat-box" id="chatBox"></div>
       <textarea id="prompt" rows="3" placeholder="Type your message here..."></textarea>
       <button onclick="sendPrompt()">Send</button>
@@ -115,57 +115,46 @@
          }
          
          function addDownloadButtons() {
-         const blocks = document.querySelectorAll('.message-content pre');
+           const blocks = document.querySelectorAll('.message-content pre');
+           blocks.forEach((block, i) => {
+             if (block.querySelector('.download-btn')) return;
+             const codeEl = block.querySelector('code');
+             if (!codeEl) return;
          
-         blocks.forEach((block, i) => {
-         // Avoid duplicate buttons
-         if (block.querySelector('.download-btn')) return;
+             const btn = document.createElement('button');
+             btn.textContent = '📥 Download';
+             btn.className = 'download-btn';
+             btn.onclick = () => {
+               const code = codeEl.innerText;
+               const blob = new Blob([code], { type: 'text/plain' });
+               const url = URL.createObjectURL(blob);
+               const a = document.createElement('a');
+               a.href = url;
+               a.download = `snippet-${i + 1}.txt`;
+               a.click();
+               URL.revokeObjectURL(url);
+             };
          
-         // Extract code text
-         const codeEl = block.querySelector('code');
-         if (!codeEl) return;
-         
-         const btn = document.createElement('button');
-         btn.textContent = '📥 Download';
-         btn.className = 'download-btn';
-         btn.onclick = () => {
-           const code = codeEl.innerText;
-           const blob = new Blob([code], { type: 'text/plain' });
-           const url = URL.createObjectURL(blob);
-           const a = document.createElement('a');
-           a.href = url;
-           a.download = `snippet-${i + 1}.txt`;
-           a.click();
-           URL.revokeObjectURL(url);
-         };
-         
-         // Wrap the block and button in a container div
-         const wrapper = document.createElement('div');
-         wrapper.style.position = 'relative';
-         wrapper.appendChild(btn);
-         wrapper.appendChild(block.cloneNode(true)); // use a copy
-         
-         // Replace the old <pre> block with the wrapper
-         block.replaceWith(wrapper);
-         });
+             const wrapper = document.createElement('div');
+             wrapper.style.position = 'relative';
+             wrapper.appendChild(btn);
+             wrapper.appendChild(block.cloneNode(true));
+             block.replaceWith(wrapper);
+           });
          }
          
          async function sendPrompt() {
            const model = document.getElementById('model').value.trim();
            const prompt = document.getElementById('prompt').value.trim();
            const thinking = document.getElementById('thinking');
-         
            if (!prompt || !model) return;
-         
            conversation.push({ role: 'user', content: prompt });
            renderChat();
            document.getElementById('prompt').value = '';
            thinking.style.display = 'block';
-         
            let assistantMsg = { role: 'assistant', content: '' };
            conversation.push(assistantMsg);
            renderChat();
-         
            try {
              const res = await fetch('http://localhost:11434/api/chat', {
                method: 'POST',
@@ -176,19 +165,15 @@
                  stream: true
                })
              });
-         
              const reader = res.body.getReader();
              const decoder = new TextDecoder();
              let buffer = '';
-         
              while (true) {
                const { done, value } = await reader.read();
                if (done) break;
-         
                buffer += decoder.decode(value, { stream: true });
                const lines = buffer.split('\n');
                buffer = lines.pop();
-         
                for (let line of lines) {
                  if (!line.trim()) continue;
                  const json = JSON.parse(line);
@@ -199,14 +184,35 @@
                  }
                }
              }
-         
            } catch (err) {
              assistantMsg.content = `Error: ${err.message}`;
            }
-         
            thinking.style.display = 'none';
            renderChat();
          }
+
+		window.addEventListener('DOMContentLoaded', async () => {
+		  const select = document.getElementById('model');
+		  try {
+			const res = await fetch('http://localhost:11434/v1/models');
+			const data = await res.json(); // <- contains .data array
+			select.innerHTML = '';
+			data.data.forEach(model => {
+			  const opt = document.createElement('option');
+			  opt.value = model.id;
+			  opt.textContent = model.id;
+			  select.appendChild(opt);
+			});
+		  } catch (err) {
+			console.error('Failed to load models:', err);
+			const fallback = document.createElement('option');
+			fallback.value = 'llama3.1';
+			fallback.textContent = 'llama3.1 (default)';
+			select.appendChild(fallback);
+		  }
+		});
+	
+
       </script>
    </body>
 </html>
