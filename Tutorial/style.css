@@ -1,0 +1,78 @@
+body 
+{
+	font-family: sans-serif;
+	max-width: 800px;
+	margin: auto;
+	padding: 20px;
+	background: #f1f1f1;
+}
+
+.chat-box 
+{
+	background: white;
+	padding: 20px;
+	border-radius: 8px;
+	box-shadow: 0 0 10px #ccc;
+	max-height: 600px;
+	overflow-y: auto;
+	margin-bottom: 20px;
+}
+
+.msg
+ {
+	margin-bottom: 20px;
+}
+
+.user strong
+ {
+	color: #1a73e8;
+}
+
+.assistant strong 
+{
+	color: #0b8043;
+}
+
+textarea,
+select 
+{
+	width: 100%;
+	font-size: 1em;
+	padding: 10px;
+	margin: 10px 0;
+}
+
+button 
+{
+	padding: 10px 20px;
+	font-size: 1em;
+}
+
+.message-content pre
+ {
+	background: #f6f8fa;
+	padding: 10px;
+	border-radius: 6px;
+	overflow-x: auto;
+	position: relative;
+	margin-top: 1.5em;
+}
+
+.message-content code 
+{
+	font-family: monospace;
+}
+
+.download-btn 
+{
+	position: absolute;
+	top: -2.2em;
+	right: 0;
+	font-size: 0.85em;
+	background: #ddd;
+	border: none;
+	padding: 3px 6px;
+	border-radius: 4px;
+	cursor: pointer;
+	z-index: 1;
+}

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <title>Ollama Chat</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      <link rel="stylesheet" href="style.css">
+   </head>
+   <body>
+      <h1>Ollama Chat</h1>
+      <label for="model">Model name:</label>
+      <select id="model"></select>
+      <div class="chat-box" id="chatBox"></div>
+      <textarea id="prompt" rows="10" placeholder="Type your message here..."></textarea>
+      <button onclick="sendPrompt()">Send</button>
+      <script>
+         // Get installed models async, or set to default llama3.1 if not available
+         window.addEventListener('DOMContentLoaded', async () => 
+         {
+            // Get the model select element
+            const select = document.getElementById('model');
+            try 
+            {
+               // Fetch the list of models from the Ollama API
+               const res = await fetch('http://localhost:11434/v1/models');
+               const data = await res.json();
+               select.innerHTML = '';
+
+               // Populate the select element with model options
+               data.data.forEach(model => 
+               {
+                  const opt = document.createElement('option');
+                  opt.value = model.id;
+                  opt.textContent = model.id;
+                  select.appendChild(opt);
+               });
+            } 
+            catch (err) 
+            {
+               // If fetching models fails, log the error and set a default option
+               console.error('Failed to load models:', err);
+               const fallback = document.createElement('option');
+               fallback.value = 'llama3.1';
+               fallback.textContent = 'llama3.1 (default)';
+               select.appendChild(fallback);
+            }
+         });
+
+         // We store the conversation here
+         let conversation = [];
+
+         // Function to render the chat
+         function renderChat()
+         {
+            // Get chat box and clear
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+            
+            // Loop through conversation and create message elements 
+            for (const msg of conversation) 
+            {
+               // Create a div for each message 
+               const div = document.createElement('div');
+               div.classList.add('msg');
+            
+               // Determine role and color class 
+               const role = msg.role === 'user' ? 'You' : 'Assistant';
+               const colorClass = msg.role === 'user' ? 'user' : 'assistant';
+            
+               // Parse content with marked 
+               const content = marked.parse(msg.content);
+            
+               // Set inner HTML with role and content
+               div.innerHTML = `
+                  <div class="${colorClass}">
+                  <strong>${role}:</strong>
+                  <div class="message-content">${content}</div>
+                  </div>
+               `;
+
+               // Append the message div to chat box
+               chatBox.appendChild(div);
+            }
+            
+            // Highlight code blocks
+            hljs.highlightAll();
+            
+            // Set scroll position to bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
+         }
+
+         // Add test conversation
+         conversation.push
+         (
+            { role: 'user', content: 'Hello, how are you?' },
+            { role: 'assistant', content: 'I am an AI assistant. How can I help you today?' }
+         );
+         renderChat();
+      </script>
+ </body>
+</html>
