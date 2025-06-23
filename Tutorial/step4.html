@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <title>Ollama Chat</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      <link rel="stylesheet" href="style.css">
+   </head>
+   <body>
+      <h1>Ollama Chat</h1>
+      <label for="model">Model name:</label>
+      <select id="model"></select>
+      <div class="chat-box" id="chatBox"></div>
+      <textarea id="prompt" rows="10" placeholder="Type your message here..."></textarea>
+      <button onclick="sendPrompt()">Send</button>
+      <script>
+         // Get installed models async, or set to default llama3.1 if not available
+         window.addEventListener('DOMContentLoaded', async () => 
+         {
+            // Get the model select element
+            const select = document.getElementById('model');
+            try 
+            {
+               // Fetch the list of models from the Ollama API
+               const res = await fetch('http://localhost:11434/v1/models');
+               const data = await res.json();
+               select.innerHTML = '';
+
+               // Populate the select element with model options
+               data.data.forEach(model => 
+               {
+                  const opt = document.createElement('option');
+                  opt.value = model.id;
+                  opt.textContent = model.id;
+                  select.appendChild(opt);
+               });
+            } 
+            catch (err) 
+            {
+               // If fetching models fails, log the error and set a default option
+               console.error('Failed to load models:', err);
+               const fallback = document.createElement('option');
+               fallback.value = 'llama3.1';
+               fallback.textContent = 'llama3.1 (default)';
+               select.appendChild(fallback);
+            }
+         });
+
+         // We store the conversation here
+         let conversation = [];
+
+         // Function to render the chat
+         function renderChat()
+         {
+            // Get chat box and clear
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+            
+            // Loop through conversation and create message elements 
+            for (const msg of conversation) 
+            {
+               // Create a div for each message 
+               const div = document.createElement('div');
+               div.classList.add('msg');
+            
+               // Determine role and color class 
+               const role = msg.role === 'user' ? 'You' : 'Assistant';
+               const colorClass = msg.role === 'user' ? 'user' : 'assistant';
+            
+               // Parse content with marked 
+               const content = marked.parse(msg.content);
+            
+               // Set inner HTML with role and content
+               div.innerHTML = `
+                  <div class="${colorClass}">
+                  <strong>${role}:</strong>
+                  <div class="message-content">${content}</div>
+                  </div>
+               `;
+
+               // Append the message div to chat box
+               chatBox.appendChild(div);
+            }
+            
+            // Highlight code blocks
+            hljs.highlightAll();
+            
+            // Set scroll position to bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
+         }
+
+         // Async send prompt function
+         async function sendPrompt() 
+         {
+             // Get model and prompt values
+            const model = document.getElementById('model').value.trim();
+            const prompt = document.getElementById('prompt').value.trim();
+            // Return if no prompt or model selected
+            if (!prompt || !model) return;
+
+            // Push user message to conversation
+            conversation.push({ role: 'user', content: prompt });
+
+            // Render chat with new user message
+            renderChat();
+
+            // Clear prompt input 
+            document.getElementById('prompt').value = '';
+
+            // Add assistant message placeholder
+            let assistantMsg = { role: 'assistant', content: '' };
+
+            // Add assistant placeholder to conversation
+            conversation.push(assistantMsg);
+
+            // Render chat with placeholder
+            renderChat();
+
+            // Attempt to call Ollama API
+            try 
+            {
+               const res = await fetch('http://localhost:11434/api/chat',
+               {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify
+                  ({
+                     model,
+                     messages: conversation.slice(0, -1),
+                     stream: true
+                  })
+               });
+
+               // Read response
+               const reader = res.body.getReader();
+
+               // Get text decoder
+               const decoder = new TextDecoder();
+               let buffer = '';
+
+               // Go through available response chunk
+               while (true) 
+               {
+                  // Read next chunk
+                  const { done, value } = await reader.read();
+
+                  // If done, break loop
+                  if (done) break;
+
+                  // Decode value and split by new line
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop();
+
+                  // Process each line
+                  for (let line of lines) 
+                  {
+                     // Skip empty lines
+                     if (!line.trim()) continue;
+
+                     // Parse JSON line
+                     const json = JSON.parse(line);
+
+                     // If done, skip to next line
+                     if (json.done) continue;
+
+                     // If message content exists, append to assistant message
+                     if (json.message?.content) 
+                     {
+                        // Append content to assistant message
+                        assistantMsg.content += json.message.content;
+
+                        // Render chat with updated assistant message
+                        renderChat();
+                     }
+                  }
+               }
+            } 
+            // Catch any errors during API call
+            catch (err) 
+            {
+               // Set error message in assistant message
+               assistantMsg.content = `Error: ${err.message}`;
+            }
+
+            // Render chat after API call
+            renderChat();
+         }
+      </script>
+ </body>
+</html>
