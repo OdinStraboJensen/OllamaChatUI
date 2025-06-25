@@ -128,7 +128,7 @@
                   body: JSON.stringify
                   ({
                      model,
-                     messages: conversation.slice(0, -1),
+                     messages: conversation.slice(0, -1), // Send entire conversation, so AI does not "forget" (Context window)
                      stream: true
                   })
                });
