@@ -46,4 +46,5 @@ ollama run llama3
 ## Use the included source code examples
 
 - Run webserver.bat (or on other platforms just execute the line within)
-- In your browser go to http://localhost:8000 and click the appropriate file **Note: Only sample 4 and 5 actually work for querying the models**
+- In your browser go to http://localhost:8000 and click the appropriate file
+  **Note: Only sample 4 and 5 actually work for querying the models**
