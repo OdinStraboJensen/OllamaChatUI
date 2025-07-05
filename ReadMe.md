@@ -11,8 +11,6 @@ Supports LLaMA 3.1, syntax-highlighted code, Markdown formatting, and shows a â€
 - Go to: [https://ollama.com/download](https://ollama.com/download)
 - Click **Download for Windows** and run the installer
 
-> The installer sets up WSL2 and background services automatically.
-
 ### 2. Restart Your PC (important)
 
 ---
