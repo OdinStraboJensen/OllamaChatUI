@@ -20,7 +20,8 @@ Supports LLaMA 3.1, syntax-highlighted code, Markdown formatting, and shows a �
 ## How to Install Python to run the webserver
 
 - Run this link: [https://www.python.org/ftp/python/3.13.5/python-3.13.5-amd64.exe](Python)
-- Run installer. **Make sure to include python in path for the webserver.bat to work** (If you're on OS X or Linux, I'm sure you know how to get it 😉)
+- Run installer. **Make sure to include python in path for the webserver.bat to work** 
+  (If you're on OS X or Linux, I'm sure you know how to get it 😉)
 
 ## Verify Installation
 
@@ -41,3 +42,8 @@ ollama version 0.x.x"
 ollama pull llama3
 ollama run llama3
 ```
+
+## Use the included source code examples
+
+- Run webserver.bat (or on other platforms just execute the line within)
+- In your browser go to http://localhost:8000 and click the appropriate file **Note: Only sample 4 and 5 actually work for querying the models**
