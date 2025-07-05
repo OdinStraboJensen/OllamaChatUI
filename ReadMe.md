@@ -17,7 +17,7 @@ Supports LLaMA 3.1, syntax-highlighted code, Markdown formatting, and shows a â€
 
 ---
 
-## How to Install Python to run the webserver
+## How to Install Python to run the webserver (Windows)
 
 - Run this link: [https://www.python.org/ftp/python/3.13.5/python-3.13.5-amd64.exe](Python)
 - Run installer.
